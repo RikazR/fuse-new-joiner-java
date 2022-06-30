@@ -25,6 +25,7 @@ mvc:
    iex:
       getAllSymbolsPath: /iex/symbols
       getLastTradedPricePath: /iex/lastTradedPrice
+      getHistoricalPricePath: /iex/historicalPrice
    max-size-trace-payload: 50000
 jms:
    listener-concurrency: 1-5
@@ -55,8 +56,9 @@ spring:
    datasource:
       username: sa
       password:
+      token: abc
    rest:
-      iexBasePath: https://api.iextrading.com/1.0
+      iexBasePath: https://cloud.iexapis.com/stable
 # set debug to get spring to log the classpath (and other things) on startup
 debug: true
 
