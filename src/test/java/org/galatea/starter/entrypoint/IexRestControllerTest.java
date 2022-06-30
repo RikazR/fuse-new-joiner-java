@@ -61,7 +61,7 @@ public class IexRestControllerTest extends ASpringTest {
 
     MvcResult result = this.mvc.perform(
         org.springframework.test.web.servlet.request.MockMvcRequestBuilders
-            .get("/iex/lastTradedPrice?symbols=AAPL&token=abc")
+            .get("/iex/lastTradedPrice?symbols=FB&token=abc")
             // This URL will be hit by the MockMvc client. The result is configured in the file
             // src/test/resources/wiremock/mappings/mapping-lastTradedPrice.json
             .accept(MediaType.APPLICATION_JSON_VALUE))
@@ -136,9 +136,10 @@ public class IexRestControllerTest extends ASpringTest {
 
     MvcResult result = this.mvc.perform(
             org.springframework.test.web.servlet.request.MockMvcRequestBuilders
-                .get("/iex/historicalPrice?token=abc")
+                .get("/iex/historicalPrice?range=6m&token=abc")
                 .accept(MediaType.APPLICATION_JSON_VALUE))
         .andExpect(status().isBadRequest())
+        .andExpect(status().reason("Required String parameter 'symbol' is not present"))
         .andReturn();
   }
 
@@ -150,6 +151,10 @@ public class IexRestControllerTest extends ASpringTest {
                 .get("/iex/historicalPrice?symbol=invalid&token=abc")
                 .accept(MediaType.APPLICATION_JSON_VALUE))
         .andExpect(status().isInternalServerError())
+        .andExpect(status().reason("org.springframework.web.util.NestedServletException: Request processing failed; "
+            + "nested exception is feign.FeignException: status 404 reading "
+            + "IexClient#getHistoricalPriceForSymbol(String,String,String,String); "
+            + "content:\\nUnknown symbol"))
         .andReturn();
   }
 }
