@@ -79,7 +79,7 @@ public class IexRestControllerTest extends ASpringTest {
             .accept(MediaType.APPLICATION_JSON_VALUE))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[0].symbol", is("FB")))
-        .andExpect(jsonPath("$[0].price").value(new BigDecimal("186.34")))
+        .andExpect(jsonPath("$[0].price").value(new BigDecimal("186.3011")))
         .andReturn();
   }
 
