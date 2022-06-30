@@ -5,8 +5,11 @@ import java.util.List;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.galatea.starter.domain.IexHistoricalPrice;
 import org.galatea.starter.domain.IexLastTradedPrice;
 import org.galatea.starter.domain.IexSymbol;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -21,6 +24,9 @@ public class IexService {
   @NonNull
   private IexClient iexClient;
 
+  @Value("${spring.datasource.token}")
+  private String token;
+
 
   /**
    * Get all stock symbols from IEX.
@@ -28,7 +34,7 @@ public class IexService {
    * @return a list of all Stock Symbols from IEX.
    */
   public List<IexSymbol> getAllSymbols() {
-    return iexClient.getAllSymbols();
+    return iexClient.getAllSymbols(token);
   }
 
   /**
@@ -37,13 +43,20 @@ public class IexService {
    * @param symbols the list of symbols to get a last traded price for.
    * @return a list of last traded price objects for each Symbol that is passed in.
    */
-  public List<IexLastTradedPrice> getLastTradedPriceForSymbols(final List<String> symbols) {
+  public List<IexLastTradedPrice> getLastTradedPriceForSymbols(
+      final List<String> symbols
+  ) {
     if (CollectionUtils.isEmpty(symbols)) {
       return Collections.emptyList();
     } else {
-      return iexClient.getLastTradedPriceForSymbols(symbols.toArray(new String[0]));
+      return iexClient.getLastTradedPriceForSymbols(symbols.toArray(new String[0]), token);
     }
   }
 
+  public List<IexHistoricalPrice> getHistoricalPriceForSymbol(
+      final String symbol, final String range, final String date
+  ) {
+    return iexClient.getHistoricalPriceForSymbol(symbol, range, date, token);
+  }
 
 }
