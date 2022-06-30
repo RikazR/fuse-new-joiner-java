@@ -1,15 +1,21 @@
 package org.galatea.starter.entrypoint;
 
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.math.BigDecimal;
 import java.util.Collections;
+import java.util.List;
 import junitparams.JUnitParamsRunner;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.galatea.starter.ASpringTest;
+import org.galatea.starter.domain.HistoricalPriceResult;
+import org.galatea.starter.domain.ResultRepository;
+import org.galatea.starter.domain.Search;
+import org.galatea.starter.domain.SearchRepository;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +46,12 @@ public class IexRestControllerTest extends ASpringTest {
 
   @Autowired
   private MockMvc mvc;
+
+  @Autowired
+  private SearchRepository searchRepository;
+
+  @Autowired
+  private ResultRepository resultRepository;
 
   @Test
   public void testGetSymbolsEndpoint() throws Exception {
@@ -86,17 +98,7 @@ public class IexRestControllerTest extends ASpringTest {
   @Test
   public void testGetHistoricalPriceWithRange() throws Exception {
 
-    MvcResult result = this.mvc.perform(
-            org.springframework.test.web.servlet.request.MockMvcRequestBuilders
-                .get("/iex/historicalPrice?symbol=AAPL&range=6m&token=abc")
-                .accept(MediaType.APPLICATION_JSON_VALUE))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$[0].symbol", is("AAPL")))
-        .andExpect(jsonPath("$[0].close").value(new BigDecimal("180.33")))
-        .andExpect(jsonPath("$[1].symbol", is("AAPL")))
-        .andExpect(jsonPath("$[1].high").value(new BigDecimal("181.33")))
-        .andExpect(jsonPath("$[2].date", is("2021-12-29")))
-        .andReturn();
+    histPriceRangeRequest();
   }
 
   @Test
@@ -151,5 +153,43 @@ public class IexRestControllerTest extends ASpringTest {
                 .accept(MediaType.APPLICATION_JSON_VALUE))
         .andExpect(status().isInternalServerError())
         .andReturn();
+  }
+
+  private void histPriceRangeRequest() throws Exception {
+    MvcResult result = this.mvc.perform(
+            org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                .get("/iex/historicalPrice?symbol=AAPL&range=6m&token=abc")
+                .accept(MediaType.APPLICATION_JSON_VALUE))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].symbol", is("AAPL")))
+        .andExpect(jsonPath("$[0].close").value(new BigDecimal("180.33")))
+        .andExpect(jsonPath("$[1].symbol", is("AAPL")))
+        .andExpect(jsonPath("$[1].high").value(new BigDecimal("181.33")))
+        .andExpect(jsonPath("$[2].date", is("2021-12-29")))
+        .andReturn();
+  }
+  @Test
+  public void testSearchStorage() throws Exception {
+
+    histPriceRangeRequest();
+
+    Search search = searchRepository.findBySymbolAndRangeAndDateAllIgnoreCase("AAPL", "6m", "");
+    assertEquals(search.getSymbol(), "AAPL");
+    assertEquals(search.getRange(), "6m");
+    assertEquals(search.getDate(), "");
+
+    List<HistoricalPriceResult> historicalPriceResults = resultRepository.findBySearch(search);
+    assertEquals(4, historicalPriceResults.size());
+    HistoricalPriceResult firstResult = historicalPriceResults.get(0);
+    HistoricalPriceResult secondResult = historicalPriceResults.get(1);
+
+    assertEquals("AAPL", firstResult.getSymbol());
+    assertEquals("2021-12-27", firstResult.getDate());
+    assertEquals(new BigDecimal("180.33"), firstResult.getClose());
+    assertEquals("AAPL", secondResult.getSymbol());
+    assertEquals(Integer.valueOf(79144339), secondResult.getVolume());
+    assertEquals(new BigDecimal("178.53"), secondResult.getLow());
+
+    histPriceRangeRequest();
   }
 }
